@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>Schedule_generation_library_Dima_Lozhkin</PackageId>
+    <Description>The program generates the best doubles tournament schedule for the given parameters.</Description>
+  </PropertyGroup>
+
+</Project>
