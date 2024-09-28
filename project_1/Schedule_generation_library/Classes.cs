@@ -7,24 +7,15 @@ namespace Schedule_generation_library
     // 1 <= rounds_num < teams_num <= playing_fields_num
     // matrix S_rn = playing_field
     // r - round; n - team
-    public class Population : ObservableCollection<Schedule>
-    {
-        public Population(List<Schedule> schedules)
-        {
-            foreach (Schedule elem in schedules)
-                this.Add(elem);
-        }
-        public Population() { }
-    }
-
     public class Schedule_generation
     {
 
         int fields_count;
         int teams_count;
         int rounds_count;
+        int population_size;
         List<Schedule> best_schedules;
-        Population current_population;
+        List<Schedule> current_population;
 
         public Schedule_generation(int fields = 12, int teams = 10, int rounds = 8)
         {
@@ -33,14 +24,15 @@ namespace Schedule_generation_library
             this.rounds_count = rounds;
             best_schedules = new List<Schedule>();
         }
-        public Schedule Generate(int generations = 5, int population_count = 100)
+        public Schedule Generate(int generations = 150, int population_count = 500)
         {
+            population_size = population_count;
             current_population = Initial_population(population_count);
             Random rand = new Random();
             Schedule best_from_generation = null;
             for (int i = 0; i < generations; i++)
             {
-                Population next_population = new Population();
+                List<Schedule> next_population = new List<Schedule>();
                 best_from_generation = Best_schedule(current_population);
                 best_schedules.Add(best_from_generation);
                 next_population.Add(best_from_generation);
@@ -49,7 +41,7 @@ namespace Schedule_generation_library
                     List<Schedule> parents = Panmixia(current_population);
                     Schedule child_ver_1 = Crossing(parents[0], parents[1]);
                     Schedule child_ver_2 = Crossing(parents[1], parents[0]);
-                    for (int k = 0; k < 5; k++)
+                    for (int k = 0; k < teams_count / 2; k++)
                     {
                         child_ver_1.Mutate(rand);
                         child_ver_2.Mutate(rand);
@@ -58,24 +50,44 @@ namespace Schedule_generation_library
                     next_population.Add(child_ver_2);
                 }
                 current_population = next_population;
-                Console.WriteLine($"Поколение {i + 1}:");
-                Console.WriteLine("Лучшее расписание поколения");
-                Console.WriteLine($"Минимальное кол-во соперников: {best_from_generation.Min_rivals_count}");
-                Console.WriteLine($"Минимальное кол-во посещённых площадок: {best_from_generation.Min_fields_visited}\n");
             }
-            //Population tmp = new Population(best_schedules);
-            //Schedule result = Best_schedule(tmp);
-            Console.WriteLine($"площадок - {fields_count}; команд - {teams_count}; туров - {rounds_count};\n");
-            Console.WriteLine($"Лучшее расписание:\n{best_from_generation.ToString()}");
             return best_from_generation;
         }
-        private List<Schedule> Panmixia(Population schedules)
+        public void First_generation(int population_count = 100)
+        { 
+            population_size = population_count;
+            current_population = Initial_population(population_count);
+        }
+        public Schedule Iteration()
+        {
+            Random rand = new Random();
+            List<Schedule> next_population = new List<Schedule>();
+            Schedule best_from_generation = Best_schedule(current_population);
+            best_schedules.Add(best_from_generation);
+            next_population.Add(best_from_generation);
+            for (int i = 0; i < population_size / 2; i++)
+            {
+                List<Schedule> parents = Panmixia(current_population);
+                Schedule child_ver_1 = Crossing(parents[0], parents[1]);
+                Schedule child_ver_2 = Crossing(parents[1], parents[0]);
+                for (int k = 0; k < teams_count / 2; k++)
+                {
+                    child_ver_1.Mutate(rand);
+                    child_ver_2.Mutate(rand);
+                }
+                next_population.Add(child_ver_1);
+                next_population.Add(child_ver_2);
+            }
+            current_population = next_population;
+            return best_from_generation;
+        }
+        private List<Schedule> Panmixia(List<Schedule> schedules)
         {
             Random rand = new Random();
             List<Schedule> result = new List<Schedule>();
             for (int k = 0; k < 2; k++)
             {
-                Population tmp = new Population();
+                List<Schedule> tmp = new List<Schedule>();
                 int i = rand.Next(schedules.Count);
                 int j = rand.Next(schedules.Count);
                 tmp.Add(schedules[i]);
@@ -84,7 +96,7 @@ namespace Schedule_generation_library
             }
             return result;
         }
-        private Schedule Best_schedule(Population schedules)
+        private Schedule Best_schedule(List<Schedule> schedules)
         {
             int max_min_rivals = 0;
             int max_min_fields = 0;
@@ -111,15 +123,9 @@ namespace Schedule_generation_library
         }
         public Schedule Crossing(Schedule parent_1, Schedule parent_2)
         {
-            int[,] tmp_1 = parent_1.Get_schedule;
-            int[,] tmp_2 = parent_2.Get_schedule;
+            int[,] tmp_1 = parent_1.Schedule_matrix;
+            int[,] tmp_2 = parent_2.Schedule_matrix;
             int[,] res_schedule = new int[tmp_1.GetLength(0), tmp_1.GetLength(1)];
-            //for (int i = 0; i < res_schedule.GetLength(0) / 2; i++)
-            //    for (int j = 0; j < res_schedule.GetLength(1); j++)
-            //        res_schedule[i, j] = tmp_1[i, j];
-            //for (int i = res_schedule.GetLength(0) / 2; i < res_schedule.GetLength(0); i++)
-            //    for (int j = 0; j < res_schedule.GetLength(1); j++)
-            //        res_schedule[i, j] = tmp_2[i, j];
             Random rand = new Random();
             int string_num = rand.Next(this.rounds_count);
             for (int i = 0; i < string_num; i++)
@@ -130,7 +136,7 @@ namespace Schedule_generation_library
                     res_schedule[i, j] = tmp_2[i, j];
             return new Schedule(res_schedule);
         }
-        private Population Initial_population(int population_count)
+        private List<Schedule> Initial_population(int population_count)
         {
             List<Schedule> schedules = new List<Schedule>();
             for (int i = 0; i < population_count; i++)
@@ -138,7 +144,7 @@ namespace Schedule_generation_library
                 Schedule tmp = new Schedule(fields_count, teams_count, rounds_count);
                 schedules.Add(tmp);
             }
-            return new Population(schedules);
+            return schedules;
         }
     }
 
@@ -213,7 +219,7 @@ namespace Schedule_generation_library
             }
             this.playing_fields_num = max + 1;
         }
-        public int[,] Get_schedule
+        public int[,] Schedule_matrix
         {
             get { return this.matrix; }
         }
@@ -325,4 +331,3 @@ namespace Schedule_generation_library
         }
     }
 }
-
