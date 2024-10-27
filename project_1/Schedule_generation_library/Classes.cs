@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Runtime.InteropServices.Marshalling;
 using System.Xml.XPath;
 
@@ -13,6 +14,7 @@ namespace Schedule_generation_library
         int fields_count;
         int teams_count;
         int rounds_count;
+        int mutations_count;
         int population_size;
         List<Schedule> best_schedules;
         List<Schedule> current_population;
@@ -24,60 +26,87 @@ namespace Schedule_generation_library
             this.rounds_count = rounds;
             best_schedules = new List<Schedule>();
         }
-        public Schedule Generate(int generations = 150, int population_count = 500)
+        public Schedule Generate(int generations = 150, int mutations_count = 20, int population_count = 500)
         {
-            population_size = population_count;
-            current_population = Initial_population(population_count);
-            Random rand = new Random();
+            this.mutations_count = mutations_count;
             Schedule best_from_generation = null;
+
+            First_generation(population_count);
             for (int i = 0; i < generations; i++)
             {
-                List<Schedule> next_population = new List<Schedule>();
-                best_from_generation = Best_schedule(current_population);
-                best_schedules.Add(best_from_generation);
-                next_population.Add(best_from_generation);
-                for (int j = 0; j < population_count / 2 - 1; j++)
-                {
-                    List<Schedule> parents = Panmixia(current_population);
-                    Schedule child_ver_1 = Crossing(parents[0], parents[1]);
-                    Schedule child_ver_2 = Crossing(parents[1], parents[0]);
-                    for (int k = 0; k < teams_count / 2; k++)
-                    {
-                        child_ver_1.Mutate(rand);
-                        child_ver_2.Mutate(rand);
-                    }
-                    next_population.Add(child_ver_1);
-                    next_population.Add(child_ver_2);
-                }
-                current_population = next_population;
+                best_from_generation = Iteration_parallel();
             }
             return best_from_generation;
         }
         public void First_generation(int population_count = 100)
         { 
             population_size = population_count;
-            current_population = Initial_population(population_count);
+            current_population = Initial_population(population_size);
+        }
+        private List<Schedule> Initial_population(int population_count)
+        {
+            List<Schedule> schedules = new List<Schedule>();
+            for (int i = 0; i < population_count; i++)
+            {
+                Schedule tmp = new Schedule(fields_count, teams_count, rounds_count);
+                schedules.Add(tmp);
+            }
+            return schedules;
         }
         public Schedule Iteration()
         {
-            Random rand = new Random();
             List<Schedule> next_population = new List<Schedule>();
             Schedule best_from_generation = Best_schedule(current_population);
             best_schedules.Add(best_from_generation);
             next_population.Add(best_from_generation);
-            for (int i = 0; i < population_size / 2; i++)
+            for (int i = 0; i < population_size / 2 - 1; i++)
             {
                 List<Schedule> parents = Panmixia(current_population);
                 Schedule child_ver_1 = Crossing(parents[0], parents[1]);
                 Schedule child_ver_2 = Crossing(parents[1], parents[0]);
-                for (int k = 0; k < teams_count / 2; k++)
-                {
-                    child_ver_1.Mutate(rand);
-                    child_ver_2.Mutate(rand);
-                }
                 next_population.Add(child_ver_1);
                 next_population.Add(child_ver_2);
             }
+            for (int i = 0; i < mutations_count; i++)
+            {
+                Random rand = new Random();
+                int index = rand.Next(0, population_size);
+                for (int j = 0; j < teams_count / 2; j++)
+                {
+                    next_population[index].Mutate(rand);
+                }
+            }
+            current_population = next_population;
+            return best_from_generation;
+        }
+        public Schedule Iteration_parallel()
+        {
+            List<Schedule> next_population = new List<Schedule>();
+            Schedule best_from_generation = Best_schedule(current_population);
+            best_schedules.Add(best_from_generation);
+            next_population.Add(best_from_generation);
+
+            ConcurrentBag<Schedule> tmp_lst = new ConcurrentBag<Schedule>();
+            Parallel.For(0, population_size / 2 - 1, skip =>
+            {
+                List<Schedule> parents = Panmixia(current_population);
+                Schedule child_ver_1 = Crossing(parents[0], parents[1]);
+                Schedule child_ver_2 = Crossing(parents[1], parents[0]);
+                tmp_lst.Add(child_ver_1);
+                tmp_lst.Add(child_ver_2);
+            });
+            next_population.AddRange(tmp_lst);
+            tmp_lst.Clear();
+
+            Parallel.For(0, mutations_count, skip =>
+            {
+                Random rand = new Random();
+                int index = rand.Next(0, population_size);
+                for (int j = 0; j < teams_count / 2; j++)
+                {
+                    next_population[index].Mutate(rand);
+                }
+            });
             current_population = next_population;
             return best_from_generation;
         }
@@ -135,16 +164,6 @@ namespace Schedule_generation_library
                 for (int j = 0; j < res_schedule.GetLength(1); j++)
                     res_schedule[i, j] = tmp_2[i, j];
             return new Schedule(res_schedule);
-        }
-        private List<Schedule> Initial_population(int population_count)
-        {
-            List<Schedule> schedules = new List<Schedule>();
-            for (int i = 0; i < population_count; i++)
-            {
-                Schedule tmp = new Schedule(fields_count, teams_count, rounds_count);
-                schedules.Add(tmp);
-            }
-            return schedules;
         }
     }
 
@@ -317,6 +336,45 @@ namespace Schedule_generation_library
             int i = rand.Next(teams_num);
             int j = rand.Next(teams_num);
             Fields_change(r, i, j);
+        }
+        public string[,] Alternative_schedule_form()
+        {
+            int[,] field_and_teams = new int[playing_fields_num, 2];
+            string[,] alternative_matrix = new string[rounds_num, playing_fields_num];
+
+            for (int i = 0; i < matrix.GetLength(0); i++)
+            {
+                for (int j = 0; j < playing_fields_num; j++)
+                    for (int k = 0; k < 2; k++)
+                        field_and_teams[j, k] = -1;
+
+                for (int j = 0; j < matrix.GetLength(1); j++)
+                {
+                    if (field_and_teams[matrix[i, j], 0] == -1)
+                    {
+                        field_and_teams[matrix[i, j], 0] = j;
+                    }
+                    else
+                    {
+                        field_and_teams[matrix[i, j], 1] = j;
+                    }
+                }
+
+                for (int j = 0; j < playing_fields_num; j++)
+                {
+                    if (field_and_teams[j, 0] != -1 && field_and_teams[j, 1] != -1)
+                    {
+                        alternative_matrix[i, j] = "(";
+                        alternative_matrix[i, j] += (field_and_teams[j, 0] + 1).ToString() + " and " + (field_and_teams[j, 1] + 1).ToString();
+                        alternative_matrix[i, j] += ")";
+                    }
+                    else 
+                    {
+                        alternative_matrix[i, j] = " - ";
+                    }
+                }
+            }
+            return alternative_matrix;
         }
         public override string ToString()
         {
