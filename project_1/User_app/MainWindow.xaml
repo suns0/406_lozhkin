@@ -21,14 +21,16 @@
         <TextBox Name="TextBox6" Text ="{Binding Population_size}" HorizontalAlignment="Left" Margin="220,175,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="19"/>
         <Button Name="Start_button" Content="Старт" HorizontalAlignment="Left" Margin="10,217,0,0" VerticalAlignment="Top" Height="37" Width="93" Click="Start_click"/>
         <Button Name="Stop_button" Content="Стоп" HorizontalAlignment="Left" Margin="136,217,0,0" VerticalAlignment="Top" Height="37" Width="93" Click="Stop_click"/>
-        <TextBlock Name="TextBlock1" HorizontalAlignment="Left" Margin="648,25,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="94"/>
+        <TextBlock Name="TextBlock1" HorizontalAlignment="Left" Margin="648,25,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="142"/>
         <Label Content="Минимальное количество соперников &#xD;&#xA;для лучшего расписания" HorizontalAlignment="Left" Margin="388,58,0,0" VerticalAlignment="Top" Height="41" Width="233"/>
         <Label Content="Минимальное количество посещённых &#xD;&#xA;площадок для лучшего расписания" HorizontalAlignment="Left" Margin="388,107,0,0" VerticalAlignment="Top" Height="42" Width="233"/>
-        <TextBlock Name="TextBlock2" HorizontalAlignment="Left" Margin="648,73,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="94"/>
+        <TextBlock Name="TextBlock2" HorizontalAlignment="Left" Margin="648,73,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="142"/>
         <Label Content="Номер итерации" HorizontalAlignment="Left" Margin="388,20,0,0" VerticalAlignment="Top" Height="26" Width="233"/>
-        <TextBlock Name="TextBlock3" HorizontalAlignment="Left" Margin="648,120,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="94" RenderTransformOrigin="0.528,1.707"/>
+        <TextBlock Name="TextBlock3" HorizontalAlignment="Left" Margin="648,120,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="142" RenderTransformOrigin="0.528,1.707"/>
         <Label Content="Параметры расписания: &#xD;&#xA;1 &lt;= кол-во туров &lt; кол-во команд &lt;= кол-во игровых площадок" HorizontalAlignment="Left" Margin="10,276,0,0" VerticalAlignment="Top" Width="380" Height="48"/>
-        <TextBlock Name="TextBlock4" HorizontalAlignment="Left" Margin="395,175,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="384" Height="195"/>
+        <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Margin="390,154,10,10">
+            <TextBlock Name="TextBlock4"/>
+        </ScrollViewer>
 
     </Grid>
 </Window>

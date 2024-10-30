@@ -24,7 +24,7 @@ namespace User_app
             this.DataContext = _data;
             InitializeComponent();
         }
-        private void Start_click(object sender, RoutedEventArgs e)
+        private async void Start_click(object sender, RoutedEventArgs e)
         {
             Start_button.IsEnabled = false;
             _data.Change_parameters();
@@ -33,6 +33,8 @@ namespace User_app
 
             int min_rivals_count = 0;
             int min_fields_visited = 0;
+            string[,] alter_matr;
+            string tmp;
             Schedule iteration_res = null;
             Schedule_generation generator = new Schedule_generation(_data.Fields_count, _data.Teams_count, _data.Rounds_count);
             generator.First_generation();
@@ -40,38 +42,55 @@ namespace User_app
             Stop_flag = false;
             while (i < _data.Generations_count && !Stop_flag)
             {
-                iteration_res = generator.Iteration_parallel();
-                TextBlock1.Text = (i + 1).ToString();
-                if (min_rivals_count != iteration_res.Min_rivals_count || min_fields_visited != iteration_res.Min_fields_visited)
-                { 
-                    TextBlock2.Text = iteration_res.Min_rivals_count.ToString();
-                    TextBlock3.Text = iteration_res.Min_fields_visited.ToString();
-                    //string[,] alter_matr = iteration_res.Alternative_schedule_form();
-                    //string tmp = "";
-                    //for (i = 0; i < alter_matr.GetLength(0); i++)
-                    //{
-                    //    for (int j = 0; j < alter_matr.GetLength(1); j++)
-                    //        tmp += alter_matr[i, j] + " ";
-                    //    tmp += "\n";
-                    //}
-                    // TextBlock4.Text = tmp;
+                await Task.Delay(100).ContinueWith(skip =>
+                {
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        iteration_res = generator.Iteration_parallel();
+                        TextBlock1.Text = (i + 1).ToString();
+                    });
+                });
+                if (min_rivals_count <= iteration_res.Min_rivals_count && min_fields_visited < iteration_res.Min_fields_visited)
+                {
+                    await Task.Delay(0).ContinueWith(skip =>
+                    {
+                        App.Current.Dispatcher.Invoke(() =>
+                        {
+                            print(iteration_res);
+                            min_rivals_count = iteration_res.Min_rivals_count;
+                            min_fields_visited = iteration_res.Min_fields_visited;
+                        });
+                    });
                 }
                 i += 1;
             }
-            string[,] alter_matr = iteration_res.Alternative_schedule_form();
-            string tmp = "";
-            for (i = 0; i < alter_matr.GetLength(0); i++)
+            await Task.Delay(0).ContinueWith(skip =>
             {
-                for (int j = 0; j < alter_matr.GetLength(1); j++)
-                    tmp += alter_matr[i, j] + " ";
-                tmp += "\n";
-            }
-            TextBlock4.Text = tmp;
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    print(iteration_res);
+                });
+            });
+            MessageBox.Show("Выполнение завершено");
             Start_button.IsEnabled = true;
         }
         private void Stop_click(object sender, RoutedEventArgs e)
         {
             Stop_flag = true;
+        }
+        private void print(Schedule iteration_res)
+        {
+            string[,] alter_matr = iteration_res.Alternative_schedule_form();
+            string tmp = "";
+            for (int i = 0; i < alter_matr.GetLength(0); i++)
+            {
+                for (int j = 0; j < alter_matr.GetLength(1); j++)
+                    tmp += alter_matr[i, j] + " ";
+                tmp += "\n";
+            }
+            TextBlock2.Text = iteration_res.Min_rivals_count.ToString();
+            TextBlock3.Text = iteration_res.Min_fields_visited.ToString();
+            TextBlock4.Text = tmp;
         }
     }
     public class IntermediaryData: INotifyPropertyChanged
