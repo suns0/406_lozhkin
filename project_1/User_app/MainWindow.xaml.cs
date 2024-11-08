@@ -42,35 +42,24 @@ namespace User_app
             Stop_flag = false;
             while (i < _data.Generations_count && !Stop_flag)
             {
-                await Task.Delay(100).ContinueWith(skip =>
+                iteration_res = generator.Iteration_parallel();
+                await Task.Delay(0).ContinueWith(skip =>
                 {
                     App.Current.Dispatcher.Invoke(() =>
                     {
-                        iteration_res = generator.Iteration_parallel();
-                        TextBlock1.Text = (i + 1).ToString();
-                    });
-                });
-                if (min_rivals_count <= iteration_res.Min_rivals_count && min_fields_visited < iteration_res.Min_fields_visited)
-                {
-                    await Task.Delay(0).ContinueWith(skip =>
-                    {
-                        App.Current.Dispatcher.Invoke(() =>
+                        if ((i + 1) % 20 == 0)
                         {
                             print(iteration_res);
                             min_rivals_count = iteration_res.Min_rivals_count;
                             min_fields_visited = iteration_res.Min_fields_visited;
-                        });
+                            TextBlock1.Text = (i + 1).ToString();
+                        }
                     });
-                }
+                });
                 i += 1;
             }
-            await Task.Delay(0).ContinueWith(skip =>
-            {
-                App.Current.Dispatcher.Invoke(() =>
-                {
-                    print(iteration_res);
-                });
-            });
+            TextBlock1.Text = i.ToString();
+            print(iteration_res);
             MessageBox.Show("Выполнение завершено");
             Start_button.IsEnabled = true;
         }
@@ -106,9 +95,9 @@ namespace User_app
             Fields_count = 12;
             Teams_count = 10;
             Rounds_count = 8;
-            Mutations_count = 100;
-            Population_size = 100;
-            Generations_count = 10;
+            Mutations_count = 50;
+            Population_size = 250;
+            Generations_count = 100;
         }
         public void Change_parameters()
         {
