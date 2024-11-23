@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Schedule_generation_library\Schedule_generation_library.csproj" />
+	<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
 </Project>

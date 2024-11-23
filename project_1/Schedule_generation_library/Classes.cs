@@ -18,29 +18,39 @@ namespace Schedule_generation_library
         int population_size;
         List<Schedule> best_schedules;
         List<Schedule> current_population;
-
-        public Schedule_generation(int fields = 12, int teams = 10, int rounds = 8)
+        public List<Schedule> Current_population
+        {
+            get 
+            { 
+                return current_population; 
+            }
+        }
+        public Schedule_generation(int fields = 12, int teams = 10, int rounds = 8, int mutations_count = 50, int population_size = 250)
         {
             this.fields_count = fields;
             this.teams_count = teams;
             this.rounds_count = rounds;
+            this.mutations_count = mutations_count;
+            this.population_size = population_size;
             best_schedules = new List<Schedule>();
         }
-        public Schedule Generate(int generations = 150, int mutations_count = 20, int population_count = 500)
+        public Schedule Generate(int generations = 150)
         {
-            this.mutations_count = mutations_count;
             Schedule best_from_generation = null;
 
-            First_generation(population_count);
+            First_generation();
             for (int i = 0; i < generations; i++)
             {
                 best_from_generation = Iteration_parallel();
             }
             return best_from_generation;
         }
-        public void First_generation(int population_count = 100)
+        public void First_generation(List<Schedule> initial_population)
         { 
-            population_size = population_count;
+            current_population = initial_population;
+        }
+        public void First_generation()
+        { 
             current_population = Initial_population(population_size);
         }
         private List<Schedule> Initial_population(int population_count)
@@ -70,11 +80,8 @@ namespace Schedule_generation_library
             for (int i = 0; i < mutations_count; i++)
             {
                 Random rand = new Random();
-                int index = rand.Next(0, population_size);
-                for (int j = 0; j < teams_count / 2; j++)
-                {
-                    next_population[index].Mutate(rand);
-                }
+                int index = rand.Next(0, population_size - 1);
+                next_population[index].Mutate(rand);
             }
             current_population = next_population;
             return best_from_generation;
@@ -95,18 +102,20 @@ namespace Schedule_generation_library
                 tmp_lst.Add(child_ver_1);
                 tmp_lst.Add(child_ver_2);
             });
+
             next_population.AddRange(tmp_lst);
             tmp_lst.Clear();
 
             Parallel.For(0, mutations_count, skip =>
             {
                 Random rand = new Random();
-                int index = rand.Next(0, population_size);
-                for (int j = 0; j < teams_count / 2; j++)
-                {
-                    next_population[index].Mutate(rand);
-                }
+                int index = rand.Next(population_size - 1);
+                next_population[index].Mutate(rand);
+                tmp_lst.Add(next_population[index]);
             });
+            next_population.Clear();
+            next_population.AddRange(tmp_lst);
+
             current_population = next_population;
             return best_from_generation;
         }
@@ -173,6 +182,14 @@ namespace Schedule_generation_library
         int teams_num;
         int rounds_num;
         int[,] matrix;
+        public int[,] Matrix
+        {
+            get 
+            { 
+                return matrix;
+            }
+            set { }
+        }
 
         public Schedule(int fields = 12, int teams = 10, int rounds = 8)
         {
