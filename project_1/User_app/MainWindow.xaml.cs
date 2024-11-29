@@ -114,6 +114,7 @@ namespace User_app
                     {
                         using (var db = new ApplicationContext())
                         {
+                            MessageBox.Show("Начало сохранения 1");
                             Generator_attrs tmp_generator = new Generator_attrs();
 
                             tmp_generator.Name = savingNameWindow.Generator_name;
@@ -125,17 +126,19 @@ namespace User_app
                             tmp_generator.Generations_count = _data.Generations_count;
                             tmp_generator.Population_size = _data.Population_size;
 
+                            MessageBox.Show("Начало сохранения 2");
                             db.Generators_attrs.Add(tmp_generator);
 
+                            MessageBox.Show("Начало сохранения 3");
                             for (int i = 0; i < generator.Current_population.Count; i++)
                             {
                                 string serializable_schedule = JsonConvert.SerializeObject(generator.Current_population[i].Matrix);
                                 Schedule_population tmp_population = new Schedule_population();
                                 tmp_population.Schedule_view = serializable_schedule;
-                                tmp_population.Generator_attrs = tmp_generator;
                                 db.Schedule_Populations.Add(tmp_population);
                             }
 
+                            MessageBox.Show("Начало сохранения 4");
                             db.SaveChanges();
                             MessageBox.Show("Генератор сохранен");
                             Save_flag = false;
@@ -282,7 +285,6 @@ namespace User_app
     public class Generator_attrs
     {
         public string? Name { get; set; }
-        public string? Schedule_view { get; set; }
         public int Stop_idx { get; set; }
         public List<Schedule_population>? Population { get; set; }
         public int Fields_count { get; set; }
@@ -296,7 +298,6 @@ namespace User_app
     { 
         public int Id { get; set; }
         public string? Schedule_view { get; set; }
-        public Generator_attrs? Generator_attrs { get; set; }
     }
     public class ApplicationContext : DbContext
     {
@@ -304,11 +305,11 @@ namespace User_app
         public DbSet<Schedule_population> Schedule_Populations { get; set; }
         public ApplicationContext()
         {
-            Database.EnsureCreated();
+            // Database.EnsureCreated();
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=myappdb;Trusted_Connection=True;");
+            optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=myappdb2;Trusted_Connection=True;");
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
