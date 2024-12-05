@@ -48,6 +48,7 @@ namespace Schedule_generation_library
         public void First_generation(List<Schedule> initial_population)
         { 
             current_population = initial_population;
+            population_size = current_population.Count;
         }
         public void First_generation()
         { 
@@ -109,7 +110,7 @@ namespace Schedule_generation_library
             Parallel.For(0, mutations_count, skip =>
             {
                 Random rand = new Random();
-                int index = rand.Next(population_size - 1);
+                int index = Random.Shared.Next(0, population_size - 1);
                 next_population[index].Mutate(rand);
                 tmp_lst.Add(next_population[index]);
             });
@@ -165,7 +166,7 @@ namespace Schedule_generation_library
             int[,] tmp_2 = parent_2.Schedule_matrix;
             int[,] res_schedule = new int[tmp_1.GetLength(0), tmp_1.GetLength(1)];
             Random rand = new Random();
-            int string_num = rand.Next(this.rounds_count);
+            int string_num = Random.Shared.Next(this.rounds_count);
             for (int i = 0; i < string_num; i++)
                 for (int j = 0; j < res_schedule.GetLength(1); j++)
                     res_schedule[i, j] = tmp_1[i, j];
@@ -182,14 +183,6 @@ namespace Schedule_generation_library
         int teams_num;
         int rounds_num;
         int[,] matrix;
-        public int[,] Matrix
-        {
-            get 
-            { 
-                return matrix;
-            }
-            set { }
-        }
 
         public Schedule(int fields = 12, int teams = 10, int rounds = 8)
         {

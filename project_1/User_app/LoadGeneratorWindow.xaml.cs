@@ -27,12 +27,16 @@ namespace User_app
         public LoadGeneratorWindow(List<string> generators_names)
         {
             InitializeComponent();
-            Exit_flag = false;
             GeneratorsNamesListBox.ItemsSource = generators_names;
         }
         private void Choose_click(object sender, RoutedEventArgs e)
         {
             Exit_flag = true;
+            this.Close();
+        }
+        private void Cancel_click(object sender, RoutedEventArgs e)
+        {
+            Exit_flag = false;
             this.Close();
         }
     }

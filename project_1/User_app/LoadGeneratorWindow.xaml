@@ -8,8 +8,9 @@
         Title="Загрузка доступного генератора из списка" Height="450" Width="800">
     <Grid>
         <TextBlock Text="Выберите генератор из списка:" HorizontalAlignment="Center" Margin="0,80,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Height="22" Width="176"/>
-        <Button Content="Выбрать" Click="Choose_click"  HorizontalAlignment="Left" Margin="438,345,0,0" VerticalAlignment="Top"/>
+        <Button Content="Выбрать" Click="Choose_click"  HorizontalAlignment="Center" Margin="0,345,0,0" VerticalAlignment="Top"/>
         <ListBox Name="GeneratorsNamesListBox" Margin="312,107,312,94"/>
+        <Button Content="Отмена" Click="Cancel_click"  HorizontalAlignment="Left" Margin="438,345,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </Window>

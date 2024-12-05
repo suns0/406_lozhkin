@@ -114,7 +114,6 @@ namespace User_app
                     {
                         using (var db = new ApplicationContext())
                         {
-                            MessageBox.Show("Начало сохранения 1");
                             Generator_attrs tmp_generator = new Generator_attrs();
 
                             tmp_generator.Name = savingNameWindow.Generator_name;
@@ -125,20 +124,18 @@ namespace User_app
                             tmp_generator.Mutations_count = _data.Mutations_count;
                             tmp_generator.Generations_count = _data.Generations_count;
                             tmp_generator.Population_size = _data.Population_size;
-
-                            MessageBox.Show("Начало сохранения 2");
                             db.Generators_attrs.Add(tmp_generator);
 
-                            MessageBox.Show("Начало сохранения 3");
                             for (int i = 0; i < generator.Current_population.Count; i++)
                             {
-                                string serializable_schedule = JsonConvert.SerializeObject(generator.Current_population[i].Matrix);
-                                Schedule_population tmp_population = new Schedule_population();
-                                tmp_population.Schedule_view = serializable_schedule;
-                                db.Schedule_Populations.Add(tmp_population);
+                                string serializable_schedule = JsonConvert.SerializeObject(generator.Current_population[i].Schedule_matrix);
+                                Schedule_population tmp = new Schedule_population();
+                                tmp.generator_Attrs = tmp_generator;
+                                tmp.Schedule_view = serializable_schedule;
+
+                                db.Schedule_Populations.Add(tmp);
                             }
 
-                            MessageBox.Show("Начало сохранения 4");
                             db.SaveChanges();
                             MessageBox.Show("Генератор сохранен");
                             Save_flag = false;
@@ -174,41 +171,34 @@ namespace User_app
                     LoadGeneratorWindow loadGeneratorWindow = new LoadGeneratorWindow(generators_names);
                     loadGeneratorWindow.Owner = this;
                     loadGeneratorWindow.ShowDialog();
-                    if (loadGeneratorWindow.Exit_flag) 
+                    if (loadGeneratorWindow.Exit_flag)
                     {
                         Start_button.IsEnabled = false;
                         Stop_button.IsEnabled = true;
                         Save_button.IsEnabled = false;
                         Load_button.IsEnabled = false;
-                        foreach (var elem in db.Generators_attrs)
+                        Generator_attrs g = db.Generators_attrs.Include(x => x.Population).ToList().Single(x => x.Name == loadGeneratorWindow.Generator_name);
+                        _data.Fields_count = g.Fields_count;
+                        _data.Teams_count = g.Teams_count;
+                        _data.Rounds_count = g.Rounds_count;
+                        _data.Mutations_count = g.Mutations_count;
+                        _data.Population_size = g.Population_size;
+                        _data.Generations_count = g.Generations_count;
+                        _data.Change_parameters();
+
+                        this.DataContext = null;
+                        this.DataContext = _data;
+
+                        List<Schedule> tmp_lst = new List<Schedule>();
+                        for (int j = 0; j < g.Population.Count; j++)
                         {
-                            if (elem.Name == loadGeneratorWindow.Generator_name)
-                            {
-                                Generator_attrs g = (Generator_attrs)elem;
-                                _data.Fields_count = g.Fields_count;
-                                _data.Teams_count = g.Teams_count;
-                                _data.Rounds_count = g.Rounds_count;
-                                _data.Mutations_count = g.Mutations_count;
-                                _data.Population_size = g.Population_size;
-                                _data.Generations_count = g.Generations_count;
-                                _data.Change_parameters();
-
-                                this.DataContext = null;
-                                this.DataContext = _data;
-
-                                List<Schedule> tmp_lst = new List<Schedule>();
-                                generator = new Schedule_generation(g.Fields_count, g.Teams_count, g.Rounds_count, g.Mutations_count, g.Population_size);
-                                for (int j = 0; j < g.Population_size; j++)
-                                {
-                                    Schedule tmp = new Schedule(JsonConvert.DeserializeObject<int[,]>(g.Population[j].Schedule_view));
-                                    tmp_lst.Add(tmp);
-                                }
-                                generator.First_generation(tmp_lst);
-                                Stop_index = g.Stop_idx;
-
-                                break;
-                            }
+                            Schedule tmp = new Schedule(JsonConvert.DeserializeObject<int[,]>(g.Population[j].Schedule_view));
+                            tmp_lst.Add(tmp);
                         }
+
+                        generator = new Schedule_generation(g.Fields_count, g.Teams_count, g.Rounds_count, g.Mutations_count, g.Population_size);
+                        generator.First_generation(tmp_lst);
+                        Stop_index = g.Stop_idx;
 
                         Schedule iteration_res = null;
                         int i = Stop_index;
@@ -231,7 +221,14 @@ namespace User_app
                         }
 
                         TextBlock1.Text = i.ToString();
-                        print(iteration_res);
+                        if (iteration_res != null)
+                        {
+                            print(iteration_res);
+                        }
+                        else
+                        {
+                            MessageBox.Show("Данный генератор уже выполнен");
+                        }
                         Load_flag = false;
                         MessageBox.Show("Выполнение остановлено");
 
@@ -240,6 +237,11 @@ namespace User_app
                         Stop_button.IsEnabled = false;
                         Save_button.IsEnabled = true;
                         Load_button.IsEnabled = true;
+                    }
+                    else
+                    {
+                        Load_flag = false;
+                        MessageBox.Show("Генератор не загружен");
                     }
                 }
             }
@@ -286,7 +288,7 @@ namespace User_app
     {
         public string? Name { get; set; }
         public int Stop_idx { get; set; }
-        public List<Schedule_population>? Population { get; set; }
+        public List<Schedule_population> Population { get; set; } = new();
         public int Fields_count { get; set; }
         public int Teams_count { get; set; }
         public int Rounds_count { get; set; }
@@ -298,6 +300,7 @@ namespace User_app
     { 
         public int Id { get; set; }
         public string? Schedule_view { get; set; }
+        public Generator_attrs generator_Attrs { get; set; }
     }
     public class ApplicationContext : DbContext
     {
@@ -305,7 +308,7 @@ namespace User_app
         public DbSet<Schedule_population> Schedule_Populations { get; set; }
         public ApplicationContext()
         {
-            // Database.EnsureCreated();
+           // Database.EnsureCreated();
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
